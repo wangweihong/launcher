@@ -1,0 +1,77 @@
+#!/bin/bash
+
+ADDONDIR=$(cd `dirname $0`;pwd)
+SCRIPTDIR=$(cd $ADDONDIR/script;pwd)
+
+. $ADDONDIR/../common/utils.sh
+
+# parse params
+ACTION=""
+MASTERIP=""
+
+parseParams(){
+    Log::Register "${FUNCNAME}"
+
+    len=${#@}
+    IFS=' '
+    read -r -a params <<< "$@"
+    for((i=0;i<$len;i++))
+    do
+        case ${params[$i]} in
+            "-m")
+                 i=`expr $i + 1`
+                 MASTERIP=${params[$i]};;
+            "-a")
+                 i=`expr $i + 1`
+                 ACTION=${params[$i]};;
+        esac
+    done
+
+    Log::UnRegister "${FUNCNAME}"
+}
+
+showUsage(){
+    cat << END
+  Usage: $0 -a <install> -m <MasterIP>
+         $0 -a <uninstall> -m <MasterIP>
+
+END
+}
+
+checkParam(){
+    Log::Register "${FUNCNAME}"
+
+    # check
+    [[ ${#ACTION} -eq 0 ]] && Log "param number not right\n" && showUsage && Utils::exitCode 1
+    [[ ${#MASTERIP} -eq 0 ]] && Log "param number not right\n" && showUsage && Utils::exitCode 1
+
+    [[ "${ACTION}" != "install" ]] && [[ "$ACTION" != "uninstall" ]] && Log "param:$ACTION not right.\n" && showUsage && Utils::exitCode 1
+
+    Log::UnRegister "${FUNCNAME}"
+}
+
+main(){
+    Log::Register "${FUNCNAME}"
+
+    # check param
+    parseParams $@
+    checkParam $@
+
+    # install or uninstall
+    if [ "$ACTION" == "install" ];then
+        /bin/bash $SCRIPTDIR/addonInstall.sh $@
+        Utils::exitCode $?
+    fi
+
+    if [ "$ACTION" == "uninstall" ];then
+        /bin/bash $SCRIPTDIR/addonUninstall.sh $@
+        Utils::exitCode $?
+    fi
+
+    Log::UnRegister "${FUNCNAME}"
+}
+
+Log::RegisterFile $0
+Log::ParseIdentifier $@
+main $@
+Log::UnRegisterFile $0

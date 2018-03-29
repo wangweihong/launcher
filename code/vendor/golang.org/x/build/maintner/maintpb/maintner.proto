@@ -1,0 +1,102 @@
+// Copyright 2017 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// https://developers.google.com/protocol-buffers/docs/proto3
+syntax = "proto3";
+
+import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
+
+package maintpb;
+
+message Mutation {
+  GithubIssueMutation github_issue = 1;
+  GitMutation git = 2;
+}
+
+message GithubIssueMutation {
+  string owner = 1;  // "golang"
+  string repo = 2;  // "go"
+  int32 number = 3;  // 1, 2, 3... (not the ID)
+
+  // not_exist is set true if the issue has been found to not exist.
+  // If true, the owner/repo/number fields above must still be set.
+  // If a future issue mutation for the same number arrives without
+  // not_exist set, then the issue comes back to life.
+  bool not_exist = 13;
+
+  int64 id = 12;  // unique across all repos
+
+  GithubUser user = 4;   // only set for new/updated issues, not new comments
+  repeated GithubUser assignees = 10; // who the issue is assigned to
+  repeated int64 deleted_assignees = 11; // IDs of users to delete from the assignee list
+  google.protobuf.Timestamp created = 5; // only needed on new issues
+  google.protobuf.Timestamp updated = 6; // only set on updated issue text
+  string body = 7; // for new or updated issue text (top post, which isn't a comment)
+  string title = 9; // issue title
+
+  repeated GithubIssueCommentMutation comment = 8;
+
+  GithubIssueCommentSyncStatus comment_status = 14;
+}
+
+// GithubIssueCommentSyncStatus notes where syncing is at for comments
+// on an issue,
+// This mutation type is only made at/after the same top-level mutation
+// which created the corresponding comments.
+message GithubIssueCommentSyncStatus {
+  // server_date is the "Date" response header from Github for the
+  // final HTTP response.
+  google.protobuf.Timestamp server_date = 1;
+}
+
+message GithubIssueCommentMutation {
+  int64 id = 1;
+  GithubUser user = 2; // not present in edits later
+  string body = 3;   // may not be present in edits later (if only reactions changed? TODO: investigate)
+  google.protobuf.Timestamp created = 4; // not present in edits later
+  google.protobuf.Timestamp updated = 5;
+}
+
+message GithubUser {
+  int64 id = 1;
+  string login = 2;
+}
+
+message GitMutation {
+  GitRepo repo = 1;
+
+  // commit adds a commit, or adds new information to a commit if fields
+  // are added in the future.
+  GitCommit commit = 2;
+}
+
+// GitRepo identifies a git repo being mutated.
+message GitRepo {
+  // If go_repo is set, it identifies a go.googlesource.com/<go_repo> repo.
+  string go_repo = 1;
+
+  // TODO: code.googlesource.com and github repos later.
+}
+
+message GitCommit {
+  string sha1 = 1; // the full lowercase 40-hex-byte sha1 sum
+
+  // raw is the "git cat-file commit $sha1" output.
+  bytes raw = 2;
+
+  GitDiffTree diff_tree = 3;
+}
+
+// git diff-tree --numstat oldtree newtree
+message GitDiffTree {
+  repeated GitDiffTreeFile file = 1;
+}
+
+// GitDiffTreeFile represents one line of `git diff-tree --numstat` output.
+message GitDiffTreeFile {
+  string file = 1;
+  int64  added = 2;
+  int64  deleted = 3;
+  bool   binary = 4;
+}

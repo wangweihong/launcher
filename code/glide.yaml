@@ -1,0 +1,33 @@
+package: ufleet/launcher/code
+import:
+- package: github.com/ant0ine/go-json-rest
+  version: ^3.3.2
+  subpackages:
+  - rest
+- package: github.com/coreos/etcd
+  version: ^3.3.2
+  subpackages:
+  - client
+  - clientv3
+- package: github.com/pkg/sftp
+  version: ^1.4.0
+- package: golang.org/x/build/kubernetes
+- package: golang.org/x/crypto/ssh
+- package: golang.org/x/net/context
+- package: k8s.io/apimachinery/pkg/apis/meta/v1
+- package: k8s.io/apimachinery
+  subpackages:
+  - pkg/util/json
+- package: k8s.io/client-go
+  version: ^6.0.0
+  subpackages:
+  - kubernetes
+  - rest
+  - util/cert
+- package: ufleet/launcher/code/configure
+- package: ufleet/launcher/code/model/common/cluster
+testImport:
+- package: github.com/smartystreets/goconvey
+  version: ^1.6.3
+  subpackages:
+  - convey

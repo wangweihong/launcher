@@ -1,0 +1,22 @@
+1. kubernetes release download
+  https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/kubernetes-server-linux-amd64.tar.gz
+  https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/kubernetes-client-linux-amd64.tar.gz
+
+ubuntu mirror
+http://mirrors.aliyun.com/ubuntu
+  
+2. ubuntu package
+  socat
+  ebtables
+  kubernetes-cni
+  https://packages.cloud.google.com/apt/dists
+
+3. centos7 package
+  socat
+  ebtables
+  kubernetes-cni
+  
+  package description
+  https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64/repodata/primary.xml
+  package location
+  https://packages.cloud.google.com/yum/pool/567600102f687e0f27bd1fd3d8211ec1cb12e71742221526bb4e14a412f4fdb5-kubernetes-cni-0.3.0.1-0.07a8a2.x86_64.rpm

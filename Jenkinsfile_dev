@@ -1,0 +1,26 @@
+node {
+    // 检出代码
+    stage('Checkout'){
+        checkout scm
+    }
+    // 镜像中代码构建
+    stage('Build'){
+        docker.image('192.168.18.250:5002/ufleet-build/golang:1.9.2').inside {
+            sh 'echo `ls`;workdir=`pwd`;echo ${workdir};mkdir -p ${GOPATH}/src/ufleet/launcher;mv ./code ${GOPATH}/src/ufleet/launcher/;cd ${GOPATH}/src/ufleet/launcher/code;ls;GO15VENDOREXPERIMENT=1 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo -installsuffix cgo -o kube-launcher;ls; mv kube-launcher ${workdir}/'
+        }
+    }
+    // 编译镜像并push到仓库
+    stage('Image Build And Push'){
+        def imageTag = "v1.9.3.${BUILD_NUMBER}"
+        def dockerfile = readFile 'Dockerfile'
+        dockerfile = dockerfile.replaceFirst(/# ENV MODULE_VERSION #MODULE_VERSION#/, "ENV MODULE_VERSION ${imageTag}")
+        writeFile file: 'Dockerfile', text: dockerfile
+
+        app = docker.build('ufleet/kube-launcher-v1.9-dev')
+
+        docker.withRegistry('http://192.168.18.250:5002', '18.250-registry-admin') {
+            app.push(imageTag)
+            app.push('latest')
+        }
+    }
+}

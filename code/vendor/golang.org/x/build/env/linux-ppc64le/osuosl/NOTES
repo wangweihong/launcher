@@ -1,0 +1,23 @@
+The linux-ppc64le buildlets run on PPC64 VMs at osuosl.org (OSU Open Source Lab).
+
+They run Debian jessie.
+
+Filing tickets: https://support.osuosl.org/
+
+Machines:
+
+go-le-1: debian@140.211.168.23
+go-le-2: debian@140.211.168.18
+go-le-3: debian@140.211.168.180
+go-le-4: debian@140.211.168.161
+go-le-5: debian@140.211.168.162
+
+They accepting ssh keys:
+
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBc8FQIyzPuAFtyTmCZFpRb6YSU0qHcuq7Ms96utYfX+ bradfitz@brad5k.local
+
+Log in to each and:
+
+$ sudo ./setup.bash <BUILDKEY_HERE>
+
+
