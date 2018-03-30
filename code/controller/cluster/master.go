@@ -542,24 +542,6 @@ func (m *Master) importRegistryCa(sshClient *ssh.Client) error {
 	return err
 }
 
-// LoadModprobe load mode probe
-func (m *Master) LoadModprobe() error {
-	logPrefix := fmt.Sprintf("[ %s ][ %s ][ LoadModprobe ]", m.ClusterName, m.HostIP)
-	log.Printf("%s check ssh connect", logPrefix)
-	sshClient, err := m.GetSSHClient()
-	if err != nil {
-		return fmt.Errorf("get ssh client failed")
-	}
-
-	cmd := "modprobe ip_vs"
-	_, err = utils.Execute(cmd, sshClient)
-	if err != nil {
-		// 加载内核模块失败
-		return err
-	}
-	return nil
-}
-
 // saveStatusWithMsgIfExist save status with msg
 func (m *Master) saveStatusWithMsgIfExist(status string, msg string) {
 	m.ErrorMsg = msg

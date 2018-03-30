@@ -1420,7 +1420,7 @@ func (clu *Cluster) strictCheck() error {
 	// Keepalived 要求：需加载 ip_vs 内核模块
 	for i := range clu.Masters {
 		// 加载内核模块
-		err := clu.Masters[i].LoadModprobe()
+		err := clu.Masters[i].loadModprobe()
 		if err != nil {
 			return fmt.Errorf("(%s) load mod proble failed: %s", clu.Masters[i].HostIP, err.Error())
 		}

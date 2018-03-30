@@ -1,7 +1,7 @@
 package manifests
 
 const (
-	keepalivedStorageCmd = `docker run -d --name="ha-vespace-keepalive" --net=host --privileged -e VIRTUAL_IP="{{ .VirtualIP }}" -e VIRTUAL_ROUTER_ID="{{ .VirtualRouterID }}" -e INTERFACE="{{ .Interface }}" -e CONTAINERS_TO_CHECK="{{ .ContainersToCheck }}" -e PRIORITY="99" -e CHECK_FALL="2" -e CHECK_RISE="1" -e CHECK_INTERVAL="2" -e STATE="BACKUP" -v "/var/run/docker.sock":"/root/.docker" {{ .ImageKeepalived }}`
+	keepalivedStorageCmd = `docker run -d --name="ha-vespace-keepalive" --net=host --privileged -e VIRTUAL_IP="{{ .VirtualIP }}" -e VIRTUAL_ROUTER_ID="{{ .VirtualRouterID }}" -e INTERFACE="{{ .Interface }}" -e CONTAINERS_TO_CHECK="{{ .ContainersToCheck }}" -e PRIORITY="99" -e CHECK_FALL="2" -e CHECK_RISE="1" -e CHECK_INTERVAL="2" -e STATE="BACKUP" -v "/var/run/docker.sock":"/var/run/docker.sock" -v "/root/.docker":"/root/.docker" {{ .ImageKeepalived }}`
 
 	rmKeepalivedStorageCmd = `docker rm -f "ha-vespace-keepalive" 2>/dev/null || true`
 

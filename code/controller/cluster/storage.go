@@ -227,6 +227,12 @@ func AddStorageNode(clustername, sclusterName, hostip string) error {
 		return err
 	}
 
+	// Keepalived 要求：需加载 ip_vs 内核模块
+	err = node.loadModprobe()
+	if err != nil {
+		return err
+	}
+
 	netcard, err := node.getNetworkCardName()
 	if err != nil {
 		return err

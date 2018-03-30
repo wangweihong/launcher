@@ -46,3 +46,19 @@ func (h *Host) getNetworkCardName() (string, error) {
 
 	return netcard, nil
 }
+
+// LoadModprobe load mode probe
+func (h *Host) loadModprobe() error {
+	sshClient, err := h.GetSSHClient()
+	if err != nil {
+		return fmt.Errorf("get ssh client failed")
+	}
+
+	cmd := "modprobe ip_vs"
+	_, err = utils.Execute(cmd, sshClient)
+	if err != nil {
+		// 加载内核模块失败
+		return err
+	}
+	return nil
+}
