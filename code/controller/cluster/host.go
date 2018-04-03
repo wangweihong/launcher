@@ -54,7 +54,11 @@ func (h *Host) loadModprobe() error {
 		return fmt.Errorf("get ssh client failed")
 	}
 
-	cmd := "modprobe ip_vs"
+	cmd := `modprobe ip_vs
+[ ! -e /etc/rc.local ] && echo '#!/bin/bash' >> /etc/rc.local && echo "" >> /etc/rc.local && chmod a+rx /etc/rc.local
+sed -i '/modprobe ip_vs/d'  /etc/rc.local
+sed -i "2 i modprobe ip_vs" /etc/rc.local
+`
 	_, err = utils.Execute(cmd, sshClient)
 	if err != nil {
 		// 加载内核模块失败

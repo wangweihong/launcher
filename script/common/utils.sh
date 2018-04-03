@@ -248,6 +248,7 @@ common::updateIptablesConfig(){
     /sbin/sysctl --system
 
     # for docker version > 1.13
+    [ ! -e /etc/rc.local ] && echo '#!/bin/bash' >> /etc/rc.local && echo "" >> /etc/rc.local && chmod a+rx /etc/rc.local
     sed -i '/iptables -P FORWARD ACCEPT/d'  /etc/rc.local
     sed -i "2 i iptables -P FORWARD ACCEPT" /etc/rc.local
 
