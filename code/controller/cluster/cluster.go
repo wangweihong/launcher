@@ -3,11 +3,11 @@ package cluster
 import (
 	"ufleet/launcher/code/config"
 	"ufleet/launcher/code/config/manifests"
+	"ufleet/launcher/code/model/3party/etcd"
 	"ufleet/launcher/code/model/base"
 	"ufleet/launcher/code/model/common"
-	"ufleet/launcher/code/model/3party/etcd"
-	"ufleet/launcher/code/utils/certs"
 	"ufleet/launcher/code/utils"
+	"ufleet/launcher/code/utils/certs"
 
 	"fmt"
 	"strconv"
@@ -15,6 +15,7 @@ import (
 
 	"sync"
 
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -22,7 +23,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"encoding/json"
 )
 
 var (
@@ -31,7 +31,7 @@ var (
 
 func (clu *Cluster) AddMaster(m *Master) {
 	numAllSteps := 12
-	countStep   := 0
+	countStep := 0
 
 	// param check
 	if m == nil || m.HostIP == "" {
@@ -102,7 +102,7 @@ func (clu *Cluster) AddMaster(m *Master) {
 
 	// Step 00: 检查并设置状态， 设置各节点主机名等初始化操作
 	log.Printf("%s set host name", logPrefix)
-	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	err = m.setHostname(sshClient)
 	if err != nil {
 		errMsg := "set hostname failed: " + err.Error()
@@ -114,7 +114,7 @@ func (clu *Cluster) AddMaster(m *Master) {
 
 	// 先卸载，防止上次安装，但没有卸载就再次安装
 	log.Printf("%s clean env, avoid never uninstall and add master into this cluster", logPrefix)
-	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	m.RemoveMaster()
 
 	// 临时目录
@@ -140,7 +140,7 @@ func (clu *Cluster) AddMaster(m *Master) {
 
 	// 拷贝到远程主机
 	log.Printf("%s copy files to remove machine", logPrefix)
-	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	if err := m.sendInstallFiles(sshClient, configTempDir, false, false); err != nil {
 		errMsg := "send install files failed: " + err.Error()
 		log.Printf("%s %s", logPrefix, errMsg)
@@ -161,7 +161,7 @@ func (clu *Cluster) AddMaster(m *Master) {
 	// 添加etcd节点
 	//        sendFilesToRemote 函数会把各自节点的文件发送到 REMOTE_TEMP_DIR 指定的目录中，默认为： /root/k8s
 	log.Printf("%s add etcd node in etcd cluster", logPrefix)
-	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	IPs := make([]string, 0, 3)
 	for i := range clu.Masters {
 		IPs = append(IPs, clu.Masters[i].HostIP)
@@ -170,17 +170,17 @@ func (clu *Cluster) AddMaster(m *Master) {
 	err = lEtcd.Init(IPs)
 	if err != nil {
 		log.Printf("%s add etcd node to etcd cluster failed: %s", logPrefix, err)
-		m.saveStatusWithMsgIfExist(common.GlobalNodeStatusFailed, "add etcd node in etcd cluster failed: " + err.Error())
+		m.saveStatusWithMsgIfExist(common.GlobalNodeStatusFailed, "add etcd node in etcd cluster failed: "+err.Error())
 		return
 	}
 	if err = lEtcd.MemberAdd(m.HostIP); err != nil {
 		log.Printf("%s add etcd node to etcd cluster failed: %s", logPrefix, err)
-		m.saveStatusWithMsgIfExist(common.GlobalNodeStatusFailed, "add etcd node in etcd cluster failed: " + err.Error())
+		m.saveStatusWithMsgIfExist(common.GlobalNodeStatusFailed, "add etcd node in etcd cluster failed: "+err.Error())
 		return
 	}
 
 	log.Printf("%s start etcd node", logPrefix)
-	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	logDir := config.GDefault.RemoteLogDir + "/etcd"
 	getErrMsgComm := fmt.Sprintf("errMsg=$(tail -n 2 %s/etcdStart.log | head -n 1) && echo $errMsg | tr '[' '<' | tr ']' '>' | sed 's/<[^>]*>*//g'", logDir)
 	cmd := fmt.Sprintf("mkdir -p %s && cd %s%s && /bin/bash etcdStart.sh &> %s/etcdStart.log",
@@ -195,7 +195,7 @@ func (clu *Cluster) AddMaster(m *Master) {
 
 	// 检查etcd集群是否已经同步完成
 	log.Printf("%s waiting for etcd cluster ready", logPrefix)
-	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	lEtcd2 := etcd.LEtcd{}
 	err = lEtcd2.Init([]string{m.HostIP})
 	if err != nil {
@@ -213,7 +213,7 @@ func (clu *Cluster) AddMaster(m *Master) {
 
 	// 执行添加任务
 	log.Printf("%s execute install command", logPrefix)
-	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	cmd = fmt.Sprintf("/bin/bash %s/script/master/install.sh", config.GDefault.RemoteTempDir)
 	_, err = utils.Execute(cmd, sshClient)
 	if err != nil {
@@ -225,7 +225,7 @@ func (clu *Cluster) AddMaster(m *Master) {
 
 	// 获取apiserver证书和密钥
 	log.Printf("%s get apiserver cert and key", logPrefix)
-	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	if err = m.getCertAndKeys(sshClient); err != nil {
 		errMsg := fmt.Sprintf("get apiserver cert and key failed: %s", err.Error())
 		log.Printf("%s %s", logPrefix, errMsg)
@@ -235,7 +235,7 @@ func (clu *Cluster) AddMaster(m *Master) {
 
 	// 打上标签
 	log.Printf("%s set labels", logPrefix)
-	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	if err = m.setMasterLabel(); err != nil {
 		errMsg := fmt.Sprintf("set labels failed: %s", err.Error())
 		log.Printf("%s %s", logPrefix, errMsg)
@@ -243,7 +243,7 @@ func (clu *Cluster) AddMaster(m *Master) {
 		return
 	}
 
-	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	m.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	m.saveStatusWithMsgIfExist(common.GlobalNodeStatusRunning, "")
 	log.Printf("%s Done", logPrefix)
 	return
@@ -252,7 +252,7 @@ func (clu *Cluster) AddMaster(m *Master) {
 // CreateNode add a node to exist k8s master
 func (clu *Cluster) AddNode(n *Node) {
 	var numAllSteps int = 9
-	var countStep   int = 0
+	var countStep int = 0
 
 	logPrefix := fmt.Sprintf("[ %s ][ %s ][ CreateNode ]", n.ClusterName, n.HostIP)
 
@@ -284,7 +284,7 @@ func (clu *Cluster) AddNode(n *Node) {
 
 	/* 清理环境 */
 	log.Printf("%s clean the env, maybe last time already install but not uninstall", logPrefix)
-	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	n.RemoveNode()
 
 	// Set Hostname
@@ -323,7 +323,7 @@ func (clu *Cluster) AddNode(n *Node) {
 	n.saveStatusIfExist()
 
 	log.Printf("%s checking master apiserver", logPrefix)
-	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	available := n.checkMaster()
 	if !available {
 		log.Printf("%s check apiserver failed!", logPrefix)
@@ -335,7 +335,7 @@ func (clu *Cluster) AddNode(n *Node) {
 	configTempDir := fmt.Sprintf("%s/%s", config.GDefault.LocalTempDir, strconv.FormatInt(time.Now().Unix(), 10)) // 证书临时目录，在保存到 Etcd后删除
 
 	log.Printf("%s generate config and certs", logPrefix)
-	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	err = n.genConfigAndCerts(configTempDir, cluInfo.JoinToken)
 	if err != nil {
 		if err != common.EtcdNodeNumberNotThree {
@@ -348,7 +348,7 @@ func (clu *Cluster) AddNode(n *Node) {
 	}
 
 	log.Printf("%s send install files", logPrefix)
-	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	err = n.sendInstallFiles(sshClient, configTempDir)
 	if err != nil {
 		log.Printf("%s Send install files Failed! ErrorMsg: %s", logPrefix, err.Error())
@@ -357,7 +357,7 @@ func (clu *Cluster) AddNode(n *Node) {
 	}
 
 	log.Printf("%s import register ca", logPrefix)
-	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	err = n.importRegistryCa(sshClient)
 	if err != nil {
 		log.Printf("%s import register ca Failed! ErrorMsg: %s", logPrefix, err.Error())
@@ -366,7 +366,7 @@ func (clu *Cluster) AddNode(n *Node) {
 	}
 
 	log.Printf("%s execute install.sh", logPrefix)
-	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	logDir := config.GDefault.RemoteLogDir + "/node"
 	getErrMsgComm := fmt.Sprintf("errMsg=$(tail -n 2 %s/install.log | head -n 1) && echo $errMsg | tr '[' '<' | tr ']' '>' | sed 's/<[^>]*>*//g'", logDir)
 	cmd := fmt.Sprintf("mkdir -p %s &&cd %s/script/node/ && /bin/bash install.sh -logID %s > %s/install.log 2>&1",
@@ -381,7 +381,7 @@ func (clu *Cluster) AddNode(n *Node) {
 
 	// 重新给node打上标签
 	log.Printf("%s set node's labels", logPrefix)
-	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	err = n.setNodeLabel()
 	if err != nil {
 		log.Printf("%s set node's labels Failed! ErrorMsg: %s", logPrefix, err.Error())
@@ -393,13 +393,13 @@ func (clu *Cluster) AddNode(n *Node) {
 
 	// 清理环境
 	log.Printf("%s clean remote tmp dir after install", logPrefix)
-	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	err = n.cleanEnv(sshClient, configTempDir)
 	if err != nil {
 		log.Printf("%s clean remote env Failed! ErrorMsg: %s", logPrefix, err.Error())
 	}
 
-	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int {countStep=countStep+1; return countStep}(), numAllSteps), true)
+	n.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	n.saveStatusWithMsgIfExist(common.GlobalNodeStatusRunning, "")
 	log.Printf("%s Done", logPrefix)
 }
@@ -562,63 +562,87 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	// image array to map
 	imageMaps := imageArray2Map(clu.Images)
 	imageEtcdstart, found := imageMaps["etcd_amd64"]
-	if !found { return fmt.Errorf("can't find image: %s", "etcd_amd64") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "etcd_amd64")
+	}
 	imageEtcdstart = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageEtcdstart)
 
 	imageNtp, found := imageMaps["ntp"]
-	if !found { return fmt.Errorf("can't find image: %s", "ntp") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "ntp")
+	}
 	imageNtp = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageNtp)
 
 	imageVespaceStrategy, found := imageMaps["vespace_strategy"]
-	if !found { return fmt.Errorf("can't find image: %s", "vespace_strategy") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "vespace_strategy")
+	}
 	imageVespaceStrategy = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageVespaceStrategy)
 
 	imageCalicoNode, found := imageMaps["calico_node"]
-	if !found { return fmt.Errorf("can't find image: %s", "calico_node") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "calico_node")
+	}
 	imageCalicoNode = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageCalicoNode)
 
 	imageCalicoCni, found := imageMaps["calico_cni"]
-	if !found { return fmt.Errorf("can't find image: %s", "calico_cni") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "calico_cni")
+	}
 	imageCalicoCni = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageCalicoCni)
 
 	imageCalicoKubePolicyController, found := imageMaps["calico_kube_policy_controller"]
-	if !found { return fmt.Errorf("can't find image: %s", "calico_kube_policy_controller") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "calico_kube_policy_controller")
+	}
 	imageCalicoKubePolicyController = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageCalicoKubePolicyController)
 
 	imageExternalDns, found := imageMaps["external_dns"]
-	if !found { return fmt.Errorf("can't find image: %s", "external_dns") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "external_dns")
+	}
 	imageExternalDns = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageExternalDns)
 
 	imageCoredns, found := imageMaps["coredns"]
-	if !found { return fmt.Errorf("can't find image: %s", "coredns") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "coredns")
+	}
 	imageCoredns = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageCoredns)
 
 	imageKubelet, found := imageMaps["kubelet"]
-	if !found { return fmt.Errorf("can't find image: %s", "kubelet") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "kubelet")
+	}
 	imageKubelet = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageKubelet)
 
 	imagePrometheusNodeExporter, found := imageMaps["prometheus_node_exporter"]
-	if !found { return fmt.Errorf("can't find image: %s", "prometheus_node_exporter") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "prometheus_node_exporter")
+	}
 	imagePrometheusNodeExporter = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imagePrometheusNodeExporter)
 
 	imageTraefik, found := imageMaps["traefik"]
-	if !found { return fmt.Errorf("can't find image: %s", "traefik") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "traefik")
+	}
 	imageTraefik = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageTraefik)
 
 	imageScavenger, found := imageMaps["scavenger"]
-	if !found { return fmt.Errorf("can't find image: %s", "scavenger") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "scavenger")
+	}
 	imageScavenger = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageScavenger)
 
 	/* 生成所需的全部配置文件 */
 	// etcdstart.sh
 	etcdStartObject := struct {
-		Hostip      string
-		EtcdCluster string
-		PeerPort    string
-		ListenPort  string
-		Token       string
-		NtpdHost    string
-		ImageNtp    string
+		Hostip         string
+		EtcdCluster    string
+		PeerPort       string
+		ListenPort     string
+		Token          string
+		NtpdHost       string
+		ImageNtp       string
 		ImageEtcdAmd64 string
 	}{
 		master.HostIP,
@@ -636,12 +660,12 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 
 	// kubeadm.yaml
 	kubeadmObject := struct {
-		Hostip string
-		Hostname string
+		Hostip        string
+		Hostname      string
 		EtcdEndpoints string
-		PodSubnet  string
-		K8sVersion string
-		JoinToken  string
+		PodSubnet     string
+		K8sVersion    string
+		JoinToken     string
 		ServiceSubnet string
 	}{
 		clu.Vip,
@@ -661,9 +685,9 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 
 	// vespace.sh
 	vespaceObject := struct {
-		EtcdIP string
-		ManagerAddr string
-		RootPasswd  string
+		EtcdIP               string
+		ManagerAddr          string
+		RootPasswd           string
 		ImageVespaceStrategy string
 	}{
 		master.HostIP,
@@ -680,10 +704,10 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 
 	// calico.yaml
 	calicoObject := struct {
-		CalicoEtcdCluster string
-		DefaultNetPodSubnet string
-		ImageCalicoNode string
-		ImageCalicoCni  string
+		CalicoEtcdCluster               string
+		DefaultNetPodSubnet             string
+		ImageCalicoNode                 string
+		ImageCalicoCni                  string
 		ImageCalicoKubePolicyController string
 	}{
 		calicoEtcdCluster,
@@ -732,9 +756,9 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 
 	// kubelet.sh
 	kubeletObject := struct {
-		K8sVersion string
-		Hostip     string
-		Hostname   string
+		K8sVersion   string
+		Hostip       string
+		Hostname     string
 		ImageKubelet string
 	}{
 		clu.K8sVersion,
@@ -748,7 +772,7 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 
 	// external-dns.yaml
 	externalDnsObject := struct {
-		EtcdEndpoints string
+		EtcdEndpoints    string
 		ImageExternalDns string
 	}{
 		externalEtcdEndpoints,
@@ -854,55 +878,81 @@ func (clu *Cluster) genConfig(tempDir string) error {
 	// image array to map
 	imageMaps := imageArray2Map(clu.Images)
 	imageEtcdstart, found := imageMaps["etcd_amd64"]
-	if !found { return fmt.Errorf("can't find image: %s", "etcd_amd64") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "etcd_amd64")
+	}
 	imageEtcdstart = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageEtcdstart)
 
 	imageNtp, found := imageMaps["ntp"]
-	if !found { return fmt.Errorf("can't find image: %s", "ntp") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "ntp")
+	}
 	imageNtp = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageNtp)
 
 	imageVespaceHaStrategy, found := imageMaps["vespace_ha_strategy"]
-	if !found { return fmt.Errorf("can't find image: %s", "vespace_ha_strategy") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "vespace_ha_strategy")
+	}
 	imageVespaceHaStrategy = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageVespaceHaStrategy)
 
 	imageCalicoNode, found := imageMaps["calico_node"]
-	if !found { return fmt.Errorf("can't find image: %s", "calico_node") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "calico_node")
+	}
 	imageCalicoNode = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageCalicoNode)
 
 	imageCalicoCni, found := imageMaps["calico_cni"]
-	if !found { return fmt.Errorf("can't find image: %s", "calico_cni") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "calico_cni")
+	}
 	imageCalicoCni = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageCalicoCni)
 
 	imageCalicoKubePolicyController, found := imageMaps["calico_kube_policy_controller"]
-	if !found { return fmt.Errorf("can't find image: %s", "calico_kube_policy_controller") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "calico_kube_policy_controller")
+	}
 	imageCalicoKubePolicyController = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageCalicoKubePolicyController)
 
 	imageExternalDns, found := imageMaps["external_dns"]
-	if !found { return fmt.Errorf("can't find image: %s", "external_dns") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "external_dns")
+	}
 	imageExternalDns = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageExternalDns)
 
 	imageCoredns, found := imageMaps["coredns"]
-	if !found { return fmt.Errorf("can't find image: %s", "coredns") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "coredns")
+	}
 	imageCoredns = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageCoredns)
 
 	imageKeepalived, found := imageMaps["keepalived"]
-	if !found { return fmt.Errorf("can't find image: %s", "keepalived") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "keepalived")
+	}
 	imageKeepalived = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageKeepalived)
 
 	imageKubelet, found := imageMaps["kubelet"]
-	if !found { return fmt.Errorf("can't find image: %s", "kubelet") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "kubelet")
+	}
 	imageKubelet = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageKubelet)
 
 	imageScavenger, found := imageMaps["scavenger"]
-	if !found { return fmt.Errorf("can't find image: %s", "scavenger") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "scavenger")
+	}
 	imageScavenger = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageScavenger)
 
 	imagePrometheusNodeExporter, found := imageMaps["prometheus_node_exporter"]
-	if !found { return fmt.Errorf("can't find image: %s", "prometheus_node_exporter") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "prometheus_node_exporter")
+	}
 	imagePrometheusNodeExporter = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imagePrometheusNodeExporter)
 
 	imageTraefik, found := imageMaps["traefik"]
-	if !found { return fmt.Errorf("can't find image: %s", "traefik") }
+	if !found {
+		return fmt.Errorf("can't find image: %s", "traefik")
+	}
 	imageTraefik = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageTraefik)
 
 	/* 生成所需的全部配置文件 */
@@ -910,13 +960,13 @@ func (clu *Cluster) genConfig(tempDir string) error {
 	etcdToken := fmt.Sprintf("%s-%s", clu.Name, clu.getRandomString(6))
 
 	etcdStartObject := struct {
-		Hostip      string
-		EtcdCluster string
-		PeerPort    string
-		ListenPort  string
-		Token       string
-		NtpdHost    string
-		ImageNtp    string
+		Hostip         string
+		EtcdCluster    string
+		PeerPort       string
+		ListenPort     string
+		Token          string
+		NtpdHost       string
+		ImageNtp       string
 		ImageEtcdAmd64 string
 	}{
 		"",
@@ -937,12 +987,12 @@ func (clu *Cluster) genConfig(tempDir string) error {
 
 	// kubeadm.yaml
 	kubeadmObject := struct {
-		Hostip string
-		Hostname string
+		Hostip        string
+		Hostname      string
 		EtcdEndpoints string
-		PodSubnet  string
-		K8sVersion string
-		JoinToken  string
+		PodSubnet     string
+		K8sVersion    string
+		JoinToken     string
 		ServiceSubnet string
 	}{
 		"",
@@ -957,7 +1007,7 @@ func (clu *Cluster) genConfig(tempDir string) error {
 		kubeadmObject.ServiceSubnet = clu.Masters[0].ServiceNetwork
 	}
 	for i := range clu.Masters {
-		kubeadmObject.Hostip   = clu.Masters[i].HostIP
+		kubeadmObject.Hostip = clu.Masters[i].HostIP
 		kubeadmObject.Hostname = clu.Masters[i].HostName
 		if err = utils.TmplReplaceByObject(destDirMaps[clu.Masters[i].HostIP]+"/master/kubeadm.yaml", manifests.GetKubeadmYaml(), kubeadmObject, 0666); err != nil {
 			return err
@@ -966,12 +1016,12 @@ func (clu *Cluster) genConfig(tempDir string) error {
 
 	// keepalived
 	keepalivedObject := struct {
-		VirtualIP string
-		VirtualRouterID string
-		Interface string
-		KeepalivedName string
+		VirtualIP         string
+		VirtualRouterID   string
+		Interface         string
+		KeepalivedName    string
 		ContainersToCheck string
-		ImageKeepalived string
+		ImageKeepalived   string
 	}{
 		clu.Vip,
 		utils.GetIPField(clu.Vip, 4),
@@ -994,13 +1044,13 @@ func (clu *Cluster) genConfig(tempDir string) error {
 
 	// vespaces.sh
 	vespaceObject := struct {
-		ManagerAddr string
-		Etcd1IP     string
-		Etcd2IP		string
-		Etcd3IP		string
-		EtcdName	string
-		VespaceName	string
-		RootPasswd	string
+		ManagerAddr            string
+		Etcd1IP                string
+		Etcd2IP                string
+		Etcd3IP                string
+		EtcdName               string
+		VespaceName            string
+		RootPasswd             string
 		ImageVespaceHaStrategy string
 	}{
 		managerAddr,
@@ -1036,10 +1086,10 @@ func (clu *Cluster) genConfig(tempDir string) error {
 
 	// calico.yaml
 	calicoObject := struct {
-		CalicoEtcdCluster string
-		DefaultNetPodSubnet string
-		ImageCalicoNode string
-		ImageCalicoCni string
+		CalicoEtcdCluster               string
+		DefaultNetPodSubnet             string
+		ImageCalicoNode                 string
+		ImageCalicoCni                  string
 		ImageCalicoKubePolicyController string
 	}{
 		calicoEtcdCluster,
@@ -1074,7 +1124,7 @@ func (clu *Cluster) genConfig(tempDir string) error {
 
 	// external-dns.yaml
 	externalDnsObject := struct {
-		EtcdEndpoints string
+		EtcdEndpoints    string
 		ImageExternalDns string
 	}{
 		externalEtcdCluster,
@@ -1099,7 +1149,7 @@ func (clu *Cluster) genConfig(tempDir string) error {
 		ntpdHost,
 		"",
 	}
-	for i := range clu.Masters{
+	for i := range clu.Masters {
 		k8sObject.Nodename = clu.Masters[i].HostName
 		if err = utils.TmplReplaceByObject(destDirMaps[clu.Masters[i].HostIP]+"/common/kubernetes.conf", manifests.GetKubernetesConf(), k8sObject, 0666); err != nil {
 			return err
@@ -1108,9 +1158,9 @@ func (clu *Cluster) genConfig(tempDir string) error {
 
 	// kubelet.sh
 	kubeletObject := struct {
-		K8sVersion string
-		Hostip     string
-		Hostname   string
+		K8sVersion   string
+		Hostip       string
+		Hostname     string
 		ImageKubelet string
 	}{
 		clu.K8sVersion,
@@ -1118,7 +1168,7 @@ func (clu *Cluster) genConfig(tempDir string) error {
 		"",
 		imageKubelet,
 	}
-	for i := range clu.Masters{
+	for i := range clu.Masters {
 		kubeletObject.Hostip = clu.Masters[i].HostIP
 		kubeletObject.Hostname = clu.Masters[i].HostName
 		if err = utils.TmplReplaceByObject(destDirMaps[clu.Masters[i].HostIP]+"/common/kubelet.sh", manifests.GetKubeletSh(), kubeletObject, 0777); err != nil {
@@ -1627,7 +1677,7 @@ func (clu *Cluster) removeEtcd(eM Host, retryTimes int) error {
 	errMsg := ""
 
 	IPs := make([]string, 0, 3)
-	for i:=0;i<len(clu.Masters);i++ {
+	for i := 0; i < len(clu.Masters); i++ {
 		IPs = append(IPs, clu.Masters[i].HostIP)
 	}
 	lEtcd := etcd.LEtcd{}
@@ -1641,7 +1691,7 @@ func (clu *Cluster) removeEtcd(eM Host, retryTimes int) error {
 		if err := lEtcd.MemberRemove(eM.HostIP); err == nil {
 			ok = true
 			break
-		} else{
+		} else {
 			errMsg = fmt.Sprintf("%s, %s", errMsg, err.Error())
 		}
 	}
@@ -1746,6 +1796,15 @@ func (clu *Cluster) saveStatusIfExist() bool {
 	}
 	key = strings.Join([]string{common.ClusterKey, clu.Name, common.Name}, common.Sep)
 	err = base.Put(key, clu.Name)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+	key = strings.Join([]string{common.ClusterKey, clu.Name, common.ImagesKey}, common.Sep)
+	imageinfo, err := json.Marshal(clu.Images)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+	err = base.Put(key, string(imageinfo))
 	if err != nil {
 		log.Printf(err.Error())
 	}
