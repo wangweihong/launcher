@@ -6,4 +6,5 @@ type IDB interface {
 	Get(key string) (map[string]string, error)
 	Put(key, value string) error
 	Delete(key string) error
+	List(key string) map[string][]byte
 }

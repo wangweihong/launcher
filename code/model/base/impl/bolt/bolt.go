@@ -5,9 +5,9 @@ import (
 
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/coreos/bbolt"
 	"ufleet/launcher/code/config"
-	"fmt"
 )
 
 type Bolt struct {
@@ -49,7 +49,7 @@ func (b *Bolt) Get(key string) (map[string]string, error) {
 		result[key] = string(value)
 	}
 
-	tList := b.list(key)
+	tList := b.List(key)
 	for key := range tList {
 		result[key] = string(tList[key])
 	}
@@ -61,7 +61,7 @@ func (b *Bolt) Get(key string) (map[string]string, error) {
 	return result, nil
 }
 
-func (b *Bolt) list(prefix string) map[string][]byte {
+func (b *Bolt) List(prefix string) map[string][]byte {
 	result := make(map[string][]byte, 0)
 	b.db.View(func(tx *bolt.Tx) error {
 		// Assume bucket exists and has keys
@@ -72,7 +72,9 @@ func (b *Bolt) list(prefix string) map[string][]byte {
 		c := bucket.Cursor()
 
 		for k, v := c.Seek([]byte(prefix)); k != nil && bytes.HasPrefix(k, []byte(prefix)); k, v = c.Next() {
-			result[string(k)] = v
+			tmp := make([]byte, len(v))
+			copy(tmp, v)
+			result[string(k)] = tmp
 		}
 
 		return nil
@@ -81,12 +83,21 @@ func (b *Bolt) list(prefix string) map[string][]byte {
 }
 
 func (b *Bolt) Delete(key string) error {
+	fmt.Printf("llll bolt delete main key: %s\n", key)
+	keys := b.List(key)
 	return b.db.Update(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte(b.Bucket))
+		bt, err := tx.CreateBucketIfNotExists([]byte(b.Bucket))
 		if err != nil {
 			return err
 		}
-		return b.Delete([]byte(key))
+		for k, _ := range keys {
+			fmt.Printf("llll bolt delete subkey: %s\n", k)
+			err := bt.Delete([]byte(k))
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 

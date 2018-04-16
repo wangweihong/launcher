@@ -1,25 +1,25 @@
 package cluster
 
 import (
-	"fmt"
-	"ufleet/launcher/code/model/common"
-	"log"
-	"strings"
-	"ufleet/launcher/code/model/base"
-	"ufleet/launcher/code/config"
-	"ufleet/launcher/code/utils"
-	"time"
-	"ufleet/launcher/code/model/3party/etcd"
-	"sync"
-	"strconv"
 	"encoding/json"
+	"fmt"
+	"log"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+	"ufleet/launcher/code/config"
+	"ufleet/launcher/code/model/3party/etcd"
+	"ufleet/launcher/code/model/base"
+	"ufleet/launcher/code/model/common"
+	"ufleet/launcher/code/utils"
 )
 
 // CreateCluster 创建cluster入口
 // TODO: 需添加超时限制
 func CreateCluster(clu *Cluster) {
 	var numAllSteps int = 17
-	var countStep   int = 0
+	var countStep int = 0
 
 	logPrefix := fmt.Sprintf("[ %s ][ CreateCluster ]", clu.Name)
 	// Step : 初始化Cluster集群和所有Master节点状态
@@ -81,7 +81,7 @@ func CreateCluster(clu *Cluster) {
 
 	// master节点大于1时，需要执行此项严格检查
 	log.Printf("%s check master param", logPrefix)
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep=countStep+1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	if clu.BaseMasters > 1 {
 		err := clu.strictCheck()
 		if err != nil {
@@ -96,7 +96,7 @@ func CreateCluster(clu *Cluster) {
 
 	// Step : 卸载，清理远程机器
 	log.Printf("%s clean machines", logPrefix)
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep=countStep+1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	var wg sync.WaitGroup
 	wg.Add(clu.BaseMasters)
 	for i := range clu.Masters {
@@ -111,7 +111,7 @@ func CreateCluster(clu *Cluster) {
 
 	// Step 00: 检查并设置状态， 设置各节点主机名等初始化操作
 	log.Printf("%s pre init", logPrefix)
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep=countStep+1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	err := clu.preInit()
 	if err != nil {
 		errMsg := "pre init failed. ErrorMsg: " + err.Error()
@@ -144,7 +144,7 @@ func CreateCluster(clu *Cluster) {
 
 	// 将证书信息写入到etcd中
 	log.Printf("%s write cluster information into etcd", logPrefix)
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep=countStep+1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	for i := range clu.Masters {
 		clu.Masters[i].saveStatusIfExist()
 	}
@@ -166,7 +166,7 @@ func CreateCluster(clu *Cluster) {
 
 	// Step : 发送文件到各主机
 	log.Printf("%s send files to remote machine", logPrefix)
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep=countStep+1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	err = clu.sendFilesToRemote(configTempDir)
 	if err != nil {
 		errMsg := fmt.Sprintf("send file to remote master machine failed. ErrorMsg: %s", err.Error())
@@ -177,10 +177,10 @@ func CreateCluster(clu *Cluster) {
 
 	// Step : 导入ufleet 镜像仓库ca证书
 	log.Printf("%s import register ca cert", logPrefix)
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep=countStep+1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	wg.Add(clu.BaseMasters)
 	for i := range clu.Masters {
-		go func(master *Master){
+		go func(master *Master) {
 			defer wg.Done()
 
 			sshClient, err := master.GetSSHClient()
@@ -205,7 +205,7 @@ func CreateCluster(clu *Cluster) {
 
 	// Step : 部署 ETCD集群
 	log.Printf("%s begin create etcd cluster", logPrefix)
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep=countStep+1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	err = clu.createEtcdCluster()
 	if err != nil {
 		errMsg := fmt.Sprintf("create etcd cluster failed. ErrorMsg: %s", err.Error())
@@ -216,7 +216,7 @@ func CreateCluster(clu *Cluster) {
 
 	// Step : 等待 ETCD集群完成初始化和选举leader
 	IPs := make([]string, 0, 3)
-	for i:= range clu.Masters {
+	for i := range clu.Masters {
 		IPs = append(IPs, clu.Masters[i].HostIP)
 	}
 	lEtcd := etcd.LEtcd{}
@@ -234,7 +234,7 @@ func CreateCluster(clu *Cluster) {
 
 	// Step : 创建 k8s 集群
 	log.Printf("%s begin create k8s cluster", logPrefix)
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep=countStep+1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	wg.Add(clu.BaseMasters)
 	for i := range clu.Masters {
 		newCountStep := countStep
@@ -251,7 +251,7 @@ func CreateCluster(clu *Cluster) {
 
 			log.Printf("[ %s ][ %s ][ CreateMaster ] execute master/install.sh", clu.Name, master.HostIP)
 			clu.exitIfRecreate("", false)
-			master.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { newCountStep = newCountStep + 1; return newCountStep}(), numAllSteps), true)
+			master.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { newCountStep = newCountStep + 1; return newCountStep }(), numAllSteps), true)
 			logDir := config.GDefault.RemoteLogDir + "/master"
 			getErrMsgCmd := fmt.Sprintf("errMsg=$(tail -n 2 %s/install.log | head -n 1) && echo $errMsg | tr '[' '<' | tr ']' '>' | sed 's/<[^>]*>*//g'", logDir)
 			cmd := fmt.Sprintf("mkdir -p %s && cd %s/script/master/ && /bin/bash install.sh &> %s/install.log", logDir, config.GDefault.RemoteTempDir, logDir)
@@ -267,7 +267,7 @@ func CreateCluster(clu *Cluster) {
 			if isLeader {
 				log.Printf("[ %s ][ %s ][ CreateMaster ] deploy coredns", clu.Name, master.HostIP)
 				clu.exitIfRecreate("", false)
-				master.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { newCountStep = newCountStep + 1; return newCountStep}(), numAllSteps), true)
+				master.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { newCountStep = newCountStep + 1; return newCountStep }(), numAllSteps), true)
 				for i := 0; i < 180; i++ {
 					cmd = fmt.Sprintf("cd %s/script/coredns && chmod a+rx ./deploy.sh && "+
 						"./deploy.sh 10.96.0.0/16 10.244.0.0/16 | kubectl apply -f - &> %s/install.log", config.GDefault.RemoteTempDir, logDir)
@@ -288,7 +288,7 @@ func CreateCluster(clu *Cluster) {
 
 			log.Printf("%s install essential addons", logPrefix)
 			clu.exitIfRecreate("", false)
-			master.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { newCountStep = newCountStep + 1; return newCountStep}(), numAllSteps), true)
+			master.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { newCountStep = newCountStep + 1; return newCountStep }(), numAllSteps), true)
 			logDir = config.GDefault.RemoteLogDir + "/addon"
 			getErrMsgCmd = fmt.Sprintf("errMsg=$(tail -n 2 %s/addonctl.log | head -n 1) && echo $errMsg | "+
 				"tr '[' '<' | tr ']' '>' | sed 's/<[^>]*>*//g'", logDir)
@@ -321,7 +321,7 @@ func CreateCluster(clu *Cluster) {
 
 			log.Printf("%s install vespace strategy", logPrefix)
 			clu.exitIfRecreate("", false)
-			master.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { newCountStep = newCountStep + 1; return newCountStep}(), numAllSteps), true)
+			master.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { newCountStep = newCountStep + 1; return newCountStep }(), numAllSteps), true)
 			logDir = config.GDefault.RemoteLogDir + common.GlobalConfigVespacePath
 			getErrMsgCmd = fmt.Sprintf("errMsg=$(tail -n 2 %s/strategy.log | head -n 1) && echo $errMsg | "+
 				"tr '[' '<' | tr ']' '>' | sed 's/<[^>]*>*//g'", logDir)
@@ -338,7 +338,7 @@ func CreateCluster(clu *Cluster) {
 			// 清理已退出的容器
 			log.Printf("%s clean already exited containers.", logPrefix)
 			clu.exitIfRecreate("", false)
-			master.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { newCountStep = newCountStep + 1; return newCountStep}(), numAllSteps), true)
+			master.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { newCountStep = newCountStep + 1; return newCountStep }(), numAllSteps), true)
 			cmd = "docker ps -a  | grep -v grep | grep \"Exited\" | awk '{print $1}' | xargs docker rm"
 			utils.Execute(cmd, sshClient)
 
@@ -363,7 +363,7 @@ func CreateCluster(clu *Cluster) {
 			if resp, err := utils.Execute(cmd, sshClient); err != nil {
 				// update configmap failed
 				log.Printf("%s  update configmap failed! ErrorMsg: %s, %s", logPrefix, resp, err)
-				clu.Masters[0].saveStatusWithMsgIfExist(common.GlobalNodeStatusFailed, "pdate configmap failed! ErrorMsg: " + resp + ", " + err.Error())
+				clu.Masters[0].saveStatusWithMsgIfExist(common.GlobalNodeStatusFailed, "pdate configmap failed! ErrorMsg: "+resp+", "+err.Error())
 			}
 		}
 	}
@@ -389,7 +389,7 @@ func CreateCluster(clu *Cluster) {
 
 	// Step : 使用集群IP测试APIServer
 	log.Printf("%s start check apiserver", logPrefix)
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep=countStep+1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	if err = APICheck(clu.CluInfo.CaCert, clu.CluInfo.APIClientCert, clu.CluInfo.APIClientKey, "https://"+clu.CluInfo.Vip+":6443", config.GK8sDefault.TimesOfCheckApiserver); err == nil {
 		log.Printf("%s check apiserver ok.", logPrefix)
 	} else {
@@ -403,7 +403,7 @@ func CreateCluster(clu *Cluster) {
 	// 打上标签
 	log.Printf("%s set master's labels", logPrefix)
 	clu.exitIfRecreate("", false)
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	for _, master := range clu.Masters {
 		if err = master.setMasterLabel(); err != nil {
 			// 设置标签失败
@@ -413,7 +413,7 @@ func CreateCluster(clu *Cluster) {
 		}
 	}
 
-	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep=countStep+1; return countStep}(), numAllSteps), true)
+	clu.exitIfRecreate(fmt.Sprintf("%d/%d", func() int { countStep = countStep + 1; return countStep }(), numAllSteps), true)
 	clu.readyToExit(common.GlobalClusterStatusRunning, "", common.GlobalNodeStatusRunning, "")
 	log.Printf("%s Done.", logPrefix)
 	return
@@ -425,10 +425,13 @@ func RemoveCluster(clustername string) {
 	if exist {
 		for _, master := range masters {
 			go func(master Master) {
+				master.Status = common.GlobalClusterStatusPending
+				master.SaveStatus()
 				master.RemoveMaster()
 			}(master)
 		}
 	}
+	DeleteCluster(clustername)
 }
 
 // CheckCluster check if cluster exist in etcd
@@ -516,7 +519,7 @@ func GetClusterDetail(clusterName string) (map[string]string, bool) {
 		}
 		validKey := key[basekeyLen:]
 		etcdPaths := strings.Split(validKey, "/")
-		if len(etcdPaths) <= 0 || etcdPaths[0] == ""{
+		if len(etcdPaths) <= 0 || etcdPaths[0] == "" {
 			continue
 		}
 		etcdKey := etcdPaths[0]
@@ -541,7 +544,6 @@ func GetClusters() (map[string]Cluster, bool) {
 		return v, true
 	}
 
-
 	for key := range values {
 		baseLen := len(common.ClusterKey + "/")
 		if len(key) <= baseLen {
@@ -549,7 +551,7 @@ func GetClusters() (map[string]Cluster, bool) {
 		}
 		validKey := key[baseLen:]
 		etcdPaths := strings.Split(validKey, "/")
-		if len(etcdPaths) <= 0 || etcdPaths[0] == ""{
+		if len(etcdPaths) <= 0 || etcdPaths[0] == "" {
 			continue
 		}
 		etcdKey := etcdPaths[0]
@@ -600,7 +602,7 @@ func GetMasters(clusterName string) (map[string]Master, bool) {
 
 	for key := range values {
 		path := strings.Split(key, "/")
-		hostip := path[len(path) - 1]
+		hostip := path[len(path)-1]
 		v[hostip], _ = GetMaster(clusterName, hostip)
 	}
 	return v, true
@@ -644,7 +646,7 @@ func GetNodes(clusterName string) (map[string]Node, bool) {
 	for key := range values {
 		// key
 		path := strings.Split(key, "/")
-		hostip := path[len(path) - 1]
+		hostip := path[len(path)-1]
 		v[hostip], _ = GetNode(clusterName, hostip)
 	}
 	return v, true
@@ -767,7 +769,7 @@ func GetImagesInfo(clusterName string) []Image {
 
 	key := strings.Join([]string{common.ClusterKey, clusterName, common.ImagesKey}, common.Sep)
 	values, err := base.Get(key)
-	for i:=0;i<3 && err != nil; i++ {
+	for i := 0; i < 3 && err != nil; i++ {
 		values, err = base.Get(key)
 	}
 	if err != nil || values == nil {
