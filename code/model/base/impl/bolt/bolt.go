@@ -83,7 +83,6 @@ func (b *Bolt) List(prefix string) map[string][]byte {
 }
 
 func (b *Bolt) Delete(key string) error {
-	fmt.Printf("llll bolt delete main key: %s\n", key)
 	keys := b.List(key)
 	return b.db.Update(func(tx *bolt.Tx) error {
 		bt, err := tx.CreateBucketIfNotExists([]byte(b.Bucket))
@@ -91,7 +90,6 @@ func (b *Bolt) Delete(key string) error {
 			return err
 		}
 		for k, _ := range keys {
-			fmt.Printf("llll bolt delete subkey: %s\n", k)
 			err := bt.Delete([]byte(k))
 			if err != nil {
 				return err
