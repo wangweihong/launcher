@@ -1,7 +1,7 @@
 package manifests
 
 func GetCalicoYaml() string {
-	return calicoYaml
+	return calico3_0yaml
 }
 
 func GetCorednsSedYaml() string {
