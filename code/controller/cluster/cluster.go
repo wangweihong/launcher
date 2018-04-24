@@ -597,6 +597,12 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	}
 	imageCalicoKubePolicyController = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageCalicoKubePolicyController)
 
+	imageCalicoctl, found := imageMaps["calicoctl"]
+	if !found {
+		return fmt.Errorf("can't find image: %s", "calicoctl")
+	}
+	imageCalicoctl = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageCalicoctl)
+
 	imageExternalDns, found := imageMaps["external_dns"]
 	if !found {
 		return fmt.Errorf("can't find image: %s", "external_dns")
@@ -709,12 +715,14 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 		ImageCalicoNode                 string
 		ImageCalicoCni                  string
 		ImageCalicoKubePolicyController string
+		ImageCalicoctl                  string
 	}{
 		calicoEtcdCluster,
 		common.GlobalDefaultNetPodSubnet,
 		imageCalicoNode,
 		imageCalicoCni,
 		imageCalicoKubePolicyController,
+		imageCalicoctl,
 	}
 	if err = utils.TmplReplaceByObject(destDir+"/addon/conf/calico.yaml", manifests.GetCalicoYaml(), calicoObject, 0666); err != nil {
 		return err

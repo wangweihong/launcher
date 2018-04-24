@@ -325,9 +325,10 @@ metadata:
 # Calico Version v3.0.5
 # https://docs.projectcalico.org/v3.0/releases#v3.0.5
 # This manifest includes the following component versions:
-#   calico/node:v3.0.5
-#   calico/cni:v2.0.4
-#   calico/kube-controllers:v2.0.3
+#   calico/node:v3.0.5 image: quay.io/calico/node:v3.0.5
+#   calico/cni:v2.0.4 image: quay.io/calico/cni:v2.0.4
+#   calico/kube-controllers:v2.0.3 image: quay.io/calico/kube-controllers:v2.0.3
+
 
 # This ConfigMap is used to configure a self-hosted Calico installation.
 kind: ConfigMap
@@ -677,5 +678,57 @@ kind: ServiceAccount
 metadata:
   name: calico-kube-controllers
   namespace: kube-system
+
+---
+# Calico Version v3.1.1
+# https://docs.projectcalico.org/v3.1/releases#v3.1.1
+# This manifest includes the following component versions:
+#   calico/ctl:v3.1.1, //quay.io/calico/ctl:v3.1.1
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: calicoctl
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name:       calicoctl
+    image:  {{ .ImageCalicoctl }}
+    command: ["/bin/sh", "-c", "while true; do sleep 3600; done"]
+    env:
+    - name: ETCD_ENDPOINTS
+      valueFrom:
+        configMapKeyRef:
+          name: calico-config
+          key: etcd_endpoints
+    # If you're using TLS enabled etcd uncomment the following.
+    # Location of the CA certificate for etcd.
+    # - name: ETCD_CA_CERT_FILE
+    #   valueFrom:
+    #     configMapKeyRef:
+    #       name: calico-config
+    #       key: etcd_ca
+    # Location of the client key for etcd.
+    # - name: ETCD_KEY_FILE
+    #   valueFrom:
+    #     configMapKeyRef:
+    #       name: calico-config
+    #       key: etcd_key
+    # Location of the client certificate for etcd.
+    # - name: ETCD_CERT_FILE
+    #   valueFrom:
+    #     configMapKeyRef:
+    #       name: calico-config
+    #       key: etcd_cert
+    # volumeMounts:
+    # - mountPath: /calico-secrets
+    #   name: etcd-certs
+  volumes:
+    # If you're using TLS enabled etcd uncomment the following.
+    # - name: etcd-certs
+    #   secret:
+    #     secretName: calico-etcd-secrets
+
 `
 )
