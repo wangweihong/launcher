@@ -639,6 +639,12 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	}
 	imageScavenger = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageScavenger)
 
+	imageProvisioner, found := imageMaps["provisioner"]
+	if !found {
+		return fmt.Errorf("can't find image: %s", "provisioner")
+	}
+	imageProvisioner= fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageProvisioner)
+
 	/* 生成所需的全部配置文件 */
 	// etcdstart.sh
 	etcdStartObject := struct {
@@ -815,6 +821,24 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	}
 	if err = utils.TmplReplaceByObject(destDir+"/addon/conf/scavenger.yaml", manifests.GetScavengerYaml(), scavengerObject, 0666); err != nil {
 		return err
+	}
+
+	log.Printf("proivsioner enabled: %v", clu.Provisioner.Enabled)
+	if clu.Provisioner.Enabled {
+		provisionerObject := struct {
+			ImageProvisioner string
+			VespaceUser      string
+			VespacePassword  string
+			VespaceHost      string
+		}{
+			imageProvisioner,
+			clu.Provisioner.User,
+			clu.Provisioner.Password,
+			clu.Provisioner.Host,
+		}
+		if err = utils.TmplReplaceByObject(destDir+"/addon/conf/provisioner.yaml", manifests.GetProvisionerYaml(), provisionerObject, 0666); err != nil {
+			return err
+		}
 	}
 
 	return nil
