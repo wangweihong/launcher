@@ -33,4 +33,85 @@ docker run -d -m 1G --restart=always --net="host" \
   --name {{ .EtcdName }} \
   {{ .ImageVespaceHaStrategy }}
 `
+
+	provisionerYaml=`
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vespace-provisioner
+  namespace: kube-system
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: vespace-pvc-admin-binding
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: vespace-provisioner
+  namespace: kube-system
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: vespace-provisioner-config
+  namespace: kube-system
+data:
+  user: {{ .VespaceUser }}
+  password: {{ .VespacePassword }}
+  host: {{ .VespaceHost }}
+
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: vespace-provisioner
+  namespace: kube-system
+  labels:
+    xfleet-app: vespace-provisioner
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: vespace-provisioner
+      namespace: kube-system
+      labels:
+        xfleet-app: vespace-provisioner
+    spec:
+      containers:
+      - name: vespace-provisioner
+        command:
+        - /deploy/provisioner
+        - --user=$(VESPACE_USER)
+        - --password=$(VESPACE_PASSWORD)
+        - --vespace=$(VESPACE_HOST)
+        image: {{ .ImageProvisioner }}
+        env:
+        - name: VESPACE_USER
+          valueFrom:
+            configMapKeyRef:
+              name: vespace-provisioner-config
+              key: user
+        - name: VESPACE_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: vespace-provisioner-config
+              key: password
+        - name: VESPACE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: vespace-provisioner-config
+              key: host
+      serviceAccountName: vespace-provisioner
+`
+
 )
+

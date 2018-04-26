@@ -153,7 +153,7 @@ func CreateCluster(clu *Cluster) {
 	// Step : 生成 etcd 和 k8s kubeadm 配置文件
 	// 单master节点和多master节点最大的区别就在于配置文件上。
 	if clu.BaseMasters == 1 {
-		err = clu.genAloneConfig(configTempDir)
+		err = clu.	genAloneConfig(configTempDir)
 	} else {
 		err = clu.genConfig(configTempDir)
 	}

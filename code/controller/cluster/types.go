@@ -34,7 +34,15 @@ type Cluster struct {
 	SClusters   []StorageCluster `json:"storageclusters"`
 	Images      []Image          `json:"images"`
 	ErrorMsg    string           `json:"errormsg"`
+	Provisioner StorageclassProvisioner `json:"Provisioner"`
 	CluInfo                      `json:"info"`
+}
+
+type StorageclassProvisioner struct {
+	Enabled bool `json:"enabled"`
+	User string  `json:"user"`
+	Password string `json:"password"`
+	Host string  `json:"host"`
 }
 
 type Image struct {

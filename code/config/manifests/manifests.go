@@ -80,6 +80,9 @@ func GetScavengerYaml() string {
 	return scavengerYaml
 }
 
+func GetProvisionerYaml() string {
+	return provisionerYaml
+}
 func GetStorageSh() string {
 	return storageSh
 }
