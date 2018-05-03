@@ -38,6 +38,7 @@ var (
 		BaseRegistory   string
 		NtpdHost		string
 		RegistryIp		string
+		PrometheusPort   int
 	}{
 		"module",
 		"",
@@ -53,5 +54,6 @@ var (
 		"ufleet.io",
 		"",
 		"",
+		32380,
 	}
 )

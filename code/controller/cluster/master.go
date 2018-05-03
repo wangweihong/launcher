@@ -223,7 +223,7 @@ func (m *Master) genConfig(clu *Cluster, tempDir string) error {
 	}{
 		imagePrometheusNodeExporter,
 	}
-	if err = utils.TmplReplaceByObject(destDirMaps[clu.Masters[0].HostIP]+"/addon/conf/exporter.yaml", manifests.GetExporterYaml(), exporterObject, 0666); err != nil {
+	if err = utils.TmplReplaceByObject(destDirMaps[clu.Masters[0].HostIP]+"/addon/conf/exporter.yaml", manifests.GetPromethusNodeExporterYaml(), exporterObject, 0666); err != nil {
 		return err
 	}
 

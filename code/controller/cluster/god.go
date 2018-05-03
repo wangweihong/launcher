@@ -382,8 +382,8 @@ func CreateCluster(clu *Cluster) {
 		}
 	}
 
-	// Step : 保存到 Etcd并清理环境
-	clu.cleanEnv(configTempDir)
+	// Step : 保存到 Etcd并清理环境,清理远程主机的配置目录.
+	//clu.cleanEnv(configTempDir)
 
 	logPrefix = fmt.Sprintf("[ %s ][ CreateCluster ]", clu.Name)
 

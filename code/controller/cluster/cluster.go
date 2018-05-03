@@ -627,6 +627,10 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	}
 	imagePrometheusNodeExporter = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imagePrometheusNodeExporter)
 
+	imagePrometheusServer, enablePrometheusServer := imageMaps["prometheus_server"]
+	if enablePrometheusServer {
+		imagePrometheusServer = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imagePrometheusServer)
+	}
 	imageTraefik, found := imageMaps["traefik"]
 	if !found {
 		return fmt.Errorf("can't find image: %s", "traefik")
@@ -740,8 +744,22 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	}{
 		imagePrometheusNodeExporter,
 	}
-	if err = utils.TmplReplaceByObject(destDir+"/addon/conf/exporter.yaml", manifests.GetExporterYaml(), prometheusNodeExporterObject, 0666); err != nil {
+	if err = utils.TmplReplaceByObject(destDir+"/addon/conf/exporter.yaml", manifests.GetPromethusNodeExporterYaml(), prometheusNodeExporterObject, 0666); err != nil {
 		return err
+	}
+
+	//promethus server.yaml
+	if enablePrometheusServer {
+		prometheusServerObject := struct {
+			ImagePrometheusServer string
+			PrometheusServicePort int
+		}{
+			imagePrometheusServer,
+			config.GDefault.PrometheusPort,
+		}
+		if err = utils.TmplReplaceByObject(destDir+"/addon/conf/promethus_server.yaml", manifests.GetPrometheusServerYaml(), prometheusServerObject, 0666); err != nil {
+			return err
+		}
 	}
 
 	// template-traefik.yaml
@@ -1140,9 +1158,10 @@ func (clu *Cluster) genConfig(tempDir string) error {
 	}{
 		imagePrometheusNodeExporter,
 	}
-	if err = utils.TmplReplaceByObject(destDirMaps[clu.Masters[0].HostIP]+"/addon/conf/exporter.yaml", manifests.GetExporterYaml(), prometheusNodeExporterObject, 0666); err != nil {
+	if err = utils.TmplReplaceByObject(destDirMaps[clu.Masters[0].HostIP]+"/addon/conf/exporter.yaml", manifests.GetPromethusNodeExporterYaml(), prometheusNodeExporterObject, 0666); err != nil {
 		return err
 	}
+
 
 	// template-traefik.yaml
 	traefikObject := struct {

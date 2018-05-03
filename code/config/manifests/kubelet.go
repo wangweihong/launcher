@@ -1,7 +1,8 @@
 package manifests
 
 const (
-	kubeletConf = `apiVersion: v1
+	kubeletConf = `
+apiVersion: v1
 clusters:
 - cluster:
     certificate-authority-data: {{ .CaCert }}

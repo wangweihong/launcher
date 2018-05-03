@@ -16,8 +16,12 @@ func GetEtcdstartExistingSh() string {
 	return etcdstartExistingSh
 }
 
-func GetExporterYaml() string {
-	return exporterYaml
+func GetPromethusNodeExporterYaml() string {
+	return promethusNodeExporterYaml
+}
+
+func GetPrometheusServerYaml() string {
+	return prometheusServerYaml
 }
 
 func GetExternalDnsYaml() string {
