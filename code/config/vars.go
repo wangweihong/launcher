@@ -39,6 +39,7 @@ var (
 		NtpdHost       string
 		RegistryIp     string
 		PrometheusPort int
+		GrafanaPort  int
 	}{
 		"module",
 		"",
@@ -55,5 +56,6 @@ var (
 		"",
 		"",
 		32380,
+		32381,
 	}
 )

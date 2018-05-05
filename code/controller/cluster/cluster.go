@@ -649,6 +649,10 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	}
 	imageProvisioner= fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageProvisioner)
 
+	imageGrafana, enableGrafana:= imageMaps["grafana"]
+	if enableGrafana {
+		imageGrafana= fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageGrafana)
+	}
 	/* 生成所需的全部配置文件 */
 	// etcdstart.sh
 	etcdStartObject := struct {
@@ -855,6 +859,20 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 			clu.Provisioner.Host,
 		}
 		if err = utils.TmplReplaceByObject(destDir+"/addon/conf/provisioner.yaml", manifests.GetProvisionerYaml(), provisionerObject, 0666); err != nil {
+			return err
+		}
+	}
+
+	//promethus server.yaml
+	if enableGrafana{
+		grafanaObject := struct {
+			ImageGrafana string
+			GrafanaServicePort int
+		}{
+			imageGrafana,
+			config.GDefault.GrafanaPort,
+		}
+		if err = utils.TmplReplaceByObject(destDir+"/addon/conf/grafana.yaml", manifests.GetGrafanaYaml(), grafanaObject, 0666); err != nil {
 			return err
 		}
 	}

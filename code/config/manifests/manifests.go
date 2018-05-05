@@ -102,3 +102,7 @@ func GetVespaceSh() string {
 func GetHaVespaceSh() string {
 	return haVespaceSh
 }
+
+func GetGrafanaYaml() string {
+	return grafanaYaml
+}
