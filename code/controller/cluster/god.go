@@ -153,7 +153,7 @@ func CreateCluster(clu *Cluster) {
 	// Step : 生成 etcd 和 k8s kubeadm 配置文件
 	// 单master节点和多master节点最大的区别就在于配置文件上。
 	if clu.BaseMasters == 1 {
-		err = clu.	genAloneConfig(configTempDir)
+		err = clu.genAloneConfig(configTempDir)
 	} else {
 		err = clu.genConfig(configTempDir)
 	}
@@ -666,6 +666,7 @@ func DeleteCluster(clusterName string) {
 	if err != nil {
 		log.Printf("delete cluster(%s) from etcd failed. ErrorMsg: %s", clusterName, err.Error())
 	}
+	log.Printf("delete cluster(%s) from etcd success",clusterName)
 }
 
 // DeleteMaster delete a specfic master from cluster by masterip
@@ -682,6 +683,7 @@ func DeleteMaster(clusterName, masterip string) {
 	if err != nil {
 		log.Printf("delete master(%s) in cluster(%s) from etcd failed. ErrorMsg: %s", masterip, clusterName, err.Error())
 	}
+	log.Printf("delete master(%s) in cluster(%s) from etcd success.",masterip,clusterName)
 }
 
 // DeleteNode delete a specfic node from cluster by nodename
