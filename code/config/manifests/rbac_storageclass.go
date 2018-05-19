@@ -1,7 +1,8 @@
 package manifests
 
 const (
-	rbacStorageclassYaml = `apiVersion: v1
+	rbacStorageclassYaml = `
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: nfs-client-provisioner

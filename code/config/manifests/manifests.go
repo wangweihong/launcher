@@ -76,6 +76,10 @@ func GetKubernetesConf() string {
 	return kubernetesConf
 }
 
+func GetKubernetesDashboardYaml() string{
+	return k8sDashaboardYaml
+}
+
 func GetRbacStorageclassYaml() string {
 	return rbacStorageclassYaml
 }

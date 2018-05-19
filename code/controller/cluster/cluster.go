@@ -653,6 +653,13 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	if enableGrafana {
 		imageGrafana= fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageGrafana)
 	}
+
+
+	imageKubeDashboard, enableKubeDashboard:= imageMaps["kube_dashboard"]
+	if enableKubeDashboard {
+		imageKubeDashboard= fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageKubeDashboard)
+	}
+
 	/* 生成所需的全部配置文件 */
 	// etcdstart.sh
 	etcdStartObject := struct {
@@ -762,6 +769,19 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 			config.GDefault.PrometheusPort,
 		}
 		if err = utils.TmplReplaceByObject(destDir+"/addon/conf/promethus_server.yaml", manifests.GetPrometheusServerYaml(), prometheusServerObject, 0666); err != nil {
+			return err
+		}
+	}
+
+
+	//kube dashboard.yaml
+	if enableKubeDashboard {
+		kubeDashboard := struct {
+			ImageKubeDashboard string
+		}{
+			imageKubeDashboard,
+		}
+		if err = utils.TmplReplaceByObject(destDir+"/addon/conf/kube-dashboard.yaml", manifests.GetKubernetesDashboardYaml(), kubeDashboard, 0666); err != nil {
 			return err
 		}
 	}
