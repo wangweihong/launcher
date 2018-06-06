@@ -39,13 +39,13 @@ var (
 		NtpdHost       string
 		RegistryIp     string
 		PrometheusPort int
-		GrafanaPort  int
+		GrafanaPort    int
 	}{
 		"module",
 		"",
 		"127.0.0.1",
 		"/tmp/launcher",
-		"/var/data/xfleet/launcher.db",
+		"/var/lib/vespace/xfleet/launcher.db",
 		32379,
 		8886,
 		"/var/log/launcher/launcher.log",
