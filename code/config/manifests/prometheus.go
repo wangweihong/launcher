@@ -121,11 +121,10 @@ metadata:
 spec:
   selector: 
     app: prometheus-server
-  type: NodePort  
   ports:
     - port: 8080
       targetPort: 9090 
-      nodePort: {{ .PrometheusServicePort }}
+      name: prom
 
 ---
 apiVersion: v1

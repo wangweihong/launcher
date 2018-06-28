@@ -32,12 +32,10 @@ metadata:
   name: grafana
   namespace: kube-system
 spec:
-  type: NodePort
   ports:
   - port: 3000
     protocol: TCP 
-    name: http 
-    nodePort: {{ .GrafanaServicePort }}
+    name: http
   selector:
     app: grafana
 

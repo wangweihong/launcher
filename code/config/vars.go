@@ -38,8 +38,8 @@ var (
 		BaseRegistory  string
 		NtpdHost       string
 		RegistryIp     string
-		PrometheusPort int
-		GrafanaPort    int
+		IngressControllerWebPort int
+		IngressControllerAdminPort int
 	}{
 		"module",
 		"",

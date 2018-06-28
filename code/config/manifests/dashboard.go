@@ -1,8 +1,8 @@
 package manifests
 
 const (
-	//gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.1
-k8sDashaboardYaml=`
+	//ufleet.io/google_containers/kubernetes-dashboard-amd64:v1.8.1
+	dashboardYaml=`
 # ------------------- Dashboard Secret ------------------- #
 
 apiVersion: v1
@@ -79,7 +79,6 @@ subjects:
 
 ---
 # ------------------- Dashboard Deployment ------------------- #
-
 kind: Deployment
 apiVersion: apps/v1beta2
 metadata:
@@ -100,7 +99,7 @@ spec:
     spec:
       containers:
       - name: kubernetes-dashboard
-        image: {{ .ImageKubeDashboard }}
+        image: {{ .ImageDashboard }}
         ports:
         - containerPort: 8443
           protocol: TCP
@@ -149,6 +148,7 @@ spec:
   ports:
     - port: 443
       targetPort: 8443
+      name: https
   selector:
     k8s-app: kubernetes-dashboard
 `

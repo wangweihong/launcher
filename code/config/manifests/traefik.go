@@ -1,7 +1,8 @@
-package manifests
+                    package manifests
 
 const (
-	traefikYaml = `---
+	traefikYaml = `
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -32,10 +33,7 @@ metadata:
   labels:
     k8s-app: traefik-ingress-lb
 spec:
-  template:
-    metadata:
-      labels:
-        k8s-app: traefik-ingress-lb
+  template:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
         name: traefik-ingress-lb
     spec:
       affinity:
@@ -58,14 +56,12 @@ spec:
             memory: 30Mi
           requests:
             cpu: 100m
-            memory: 20Mi
+            memory: 20Mi 
         ports:
         - name: http
           containerPort: 80
-          hostPort: 80
         - name: admin
           containerPort: 8580
-          hostPort: 8580
         args:
         - --web
         - --web.address=:8580
@@ -83,13 +79,20 @@ spec:
   ports:
   - name: web
     port: 80
-    targetPort: 8580
+    nodePort: {{ .IngressControllerWebNodePort }}
+  - name: admin
+    port: 8580
+    nodePort: {{ .IngressControllerAdminNodePort }}
+  type: NodePort
+    
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: traefik-web-ui
   namespace: kube-system
+  annotations:
+    kubernetes.io/ingress.class: traefik
 spec:
   rules:
   - host: traefik-ui.local
@@ -98,5 +101,28 @@ spec:
       - path: /
         backend:
           serviceName: traefik-web-ui
-          servicePort: web`
+          servicePort: web
+  - host: kubernetes-grafana.local
+    http:
+      paths:
+      - 
+        backend:
+          serviceName: grafana
+          servicePort: http
+  - host: kubernetes-prometheus.local
+    http:
+      paths:
+      - 
+        backend:
+          serviceName: prometheus-service
+          servicePort: prom
+  - host: kubernetes-dashboard.local
+    http:
+      paths:
+      - 
+        backend: 
+          serviceName: kubernetes-dashboard
+          servicePort: https
+
+`
 )

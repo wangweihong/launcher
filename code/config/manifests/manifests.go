@@ -77,7 +77,7 @@ func GetKubernetesConf() string {
 }
 
 func GetKubernetesDashboardYaml() string{
-	return k8sDashaboardYaml
+	return dashboardYaml
 }
 
 func GetRbacStorageclassYaml() string {
@@ -91,6 +91,7 @@ func GetScavengerYaml() string {
 func GetProvisionerYaml() string {
 	return provisionerYaml
 }
+
 func GetStorageSh() string {
 	return storageSh
 }
@@ -109,4 +110,9 @@ func GetHaVespaceSh() string {
 
 func GetGrafanaYaml() string {
 	return grafanaYaml
+}
+
+// Cluster service/ Critical addon
+func GetNodeProblemDetector() string{
+	return nodeProblemDetectorYaml
 }

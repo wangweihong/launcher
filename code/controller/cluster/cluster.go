@@ -621,6 +621,12 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	}
 	imageKubelet = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageKubelet)
 
+	imageNodeProblemDetector, found:= imageMaps["node-problem-detector"]
+	if !found {
+		return fmt.Errorf("cannot find image: %s", "node-problem-detector")
+	}
+	imageNodeProblemDetector = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imageNodeProblemDetector)
+
 	imagePrometheusNodeExporter, found := imageMaps["prometheus_node_exporter"]
 	if !found {
 		return fmt.Errorf("can't find image: %s", "prometheus_node_exporter")
@@ -631,6 +637,7 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	if enablePrometheusServer {
 		imagePrometheusServer = fmt.Sprintf("%s/%s", config.GDefault.BaseRegistory, imagePrometheusServer)
 	}
+
 	imageTraefik, found := imageMaps["traefik"]
 	if !found {
 		return fmt.Errorf("can't find image: %s", "traefik")
@@ -763,10 +770,8 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	if enablePrometheusServer {
 		prometheusServerObject := struct {
 			ImagePrometheusServer string
-			PrometheusServicePort int
 		}{
 			imagePrometheusServer,
-			config.GDefault.PrometheusPort,
 		}
 		if err = utils.TmplReplaceByObject(destDir+"/addon/conf/promethus_server.yaml", manifests.GetPrometheusServerYaml(), prometheusServerObject, 0666); err != nil {
 			return err
@@ -777,7 +782,7 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	//kube dashboard.yaml
 	if enableKubeDashboard {
 		kubeDashboard := struct {
-			ImageKubeDashboard string
+			ImageDashboard string
 		}{
 			imageKubeDashboard,
 		}
@@ -789,8 +794,12 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	// template-traefik.yaml
 	traefikObject := struct {
 		ImageTraefik string
+		IngressControllerWebNodePort  int
+		IngressControllerAdminNodePort int
 	}{
 		imageTraefik,
+		config.GDefault.IngressControllerWebPort,
+		config.GDefault.IngressControllerAdminPort,
 	}
 	if err = utils.TmplReplaceByObject(destDir+"/addon/conf/traefik.yaml", manifests.GetTraefikYaml(), traefikObject, 0666); err != nil {
 		return err
@@ -823,6 +832,16 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 		imageKubelet,
 	}
 	if err = utils.TmplReplaceByObject(destDir+"/common/kubelet.sh", manifests.GetKubeletSh(), kubeletObject, 0777); err != nil {
+		return err
+	}
+
+	// node-problem-detector
+	npdObject := struct {
+		ImageNodeProblemDetector string
+	}{
+		imageNodeProblemDetector,
+	}
+	if err = utils.TmplReplaceByObject(destDir+"/addon/conf/node-problem-detector.yaml", manifests.GetNodeProblemDetector(), npdObject, 0777); err != nil {
 		return err
 	}
 
@@ -887,10 +906,8 @@ func (clu *Cluster) genAloneConfig(tempDir string) error {
 	if enableGrafana{
 		grafanaObject := struct {
 			ImageGrafana string
-			GrafanaServicePort int
 		}{
 			imageGrafana,
-			config.GDefault.GrafanaPort,
 		}
 		if err = utils.TmplReplaceByObject(destDir+"/addon/conf/grafana.yaml", manifests.GetGrafanaYaml(), grafanaObject, 0666); err != nil {
 			return err
