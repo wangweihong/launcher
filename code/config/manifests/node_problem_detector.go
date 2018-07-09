@@ -2,6 +2,8 @@ package manifests
 
 const (
 	//k8s.gcr.io/node-problem-detector:v0.4.1
+	//TODO: 需要调整, 根据系统的不同, 使用不同的configmap作为node-problem-detector的配置参数
+	//TODO: 优先支持: ubuntu16.04
 	nodeProblemDetectorYaml=`
 apiVersion: v1
 data:

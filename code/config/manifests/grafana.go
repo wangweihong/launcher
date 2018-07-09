@@ -1,5 +1,6 @@
 package manifests
 
+//TODO: 定制kube-state-metrics的dashboard界面
 
 const (
 	//# grafana/grafana:3.1.1

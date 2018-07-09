@@ -1,5 +1,6 @@
 package manifests
 
+//FIXME: 迁移到kube-prometheus或者prometheus-operator.
 const (
 	promethusNodeExporterYaml = `apiVersion: extensions/v1beta1
 kind: DaemonSet
